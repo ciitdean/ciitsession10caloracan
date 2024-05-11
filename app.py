@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
+import csv
+import io
 
 app = Flask(__name__)
 
@@ -29,6 +31,23 @@ def home():
             return redirect(url_for('home'))
     tasks = Task.query.all() 
     return render_template('index.html', tasks=tasks)
+
+# Route to download tasks as CSV
+@app.route('/download_csv')
+def download_csv():
+    tasks = Task.query.all()
+    csv_data = [] # temp dictionary
+    for task in tasks:
+        csv_data.append([task.id, task.description, task.completed])
+    
+    # Create CSV response
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['ID', 'Description', 'Completed'])
+    writer.writerows(csv_data)
+    output.seek(0)
+    
+    return Response(output, mimetype="text/csv", headers={"Content-Disposition":"attachment;filename=tasks.csv"})
 
 @app.route('/about')
 def about():
